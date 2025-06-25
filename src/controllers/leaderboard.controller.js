@@ -77,7 +77,7 @@ async function addRun(req, res) {
   }
 }
 
-// New function to generate random run data
+// Function to generate random run data
 function generateRandomRunData(player) {
   const modes = ["Solo", "Team Relay"];
   const trackIds = ["track1", "track2", "track3", "track4"]; // Example track IDs, adjust as needed
@@ -93,7 +93,7 @@ function generateRandomRunData(player) {
   };
 }
 
-// New function to add bulk runs
+// Function to add bulk runs
 async function addRunsBulk(req, res) {
   try {
     // Fetch all players
@@ -104,10 +104,8 @@ async function addRunsBulk(req, res) {
         .json({ error: "No players found in the database" });
     }
 
-    // Get Socket.io instance
     const io = req.app.get("io");
 
-    // Generate and submit runs for all players
     const runPromises = players.map(async (player) => {
       const runData = generateRandomRunData(player);
       await submitRun(runData, io);
@@ -127,12 +125,18 @@ async function addRunsBulk(req, res) {
 
 async function getPlayers(req, res) {
   try {
-    const { region, name, id, limit = 20 } = req.query;
+    const { region, name, id, limit } = req.query;
     let query = {};
     if (region) query.region = region;
     if (name) query.name = { $regex: name, $options: "i" };
     if (id) query._id = id;
-    const players = await Player.find(query).limit(parseInt(limit, 10));
+
+    let playerQuery = Player.find(query);
+    if (limit) {
+      playerQuery = playerQuery.limit(parseInt(limit, 10));
+    }
+
+    const players = await playerQuery;
     res.json(players);
   } catch (error) {
     res.status(500).json({ error: "Error fetching players" });
